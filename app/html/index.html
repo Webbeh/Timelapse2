@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recordings</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/app.css">
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="d-flex" id="wrapper">
+    <div class="bg-light border-right" id="sidebar-wrapper">
+        <div class="sidebar-heading">Timelapse</div>
+        <div class="list-group list-group-flush">
+            <a href="index.html" class="list-group-item list-group-item-action active">Recordings</a>
+            <a href="timelapse.html" class="list-group-item list-group-item-action">Profiles</a>
+            <a href="sunevents.html" class="list-group-item list-group-item-action">Sun Events</a>
+            <a href="about.html" class="list-group-item list-group-item-action">About</a>
+        </div>
+    </div>
+    
+    <div id="page-content-wrapper" class="p-0">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+            <span class="acap_name"></span>
+        </nav>
+
+        <div class="container-fluid">
+            <h1>Recordings</h1>
+            <div class="table-responsive mt-4">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Profile Name</th>
+                            <th>Images</th>
+                            <th>First Capture</th>
+                            <th>Last Capture</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordings-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Fetch app details
+    $.ajax({
+        type: "GET",
+        url: 'app',
+        dataType: 'json',
+        cache: false,
+        success: function(app) {
+            document.title = app.manifest.acapPackageConf.setup.friendlyName;
+            $('.acap_name').text(app.manifest.acapPackageConf.setup.friendlyName);
+        }
+    });
+
+    // Function to format timestamp
+    function formatDate(timestamp) {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp).toLocaleString();
+    }
+
+    // Fetch both profiles and recordings
+    Promise.all([
+        $.ajax({ url: 'timelapse', type: 'GET' }),
+        $.ajax({ url: 'recordings', type: 'GET' })
+    ]).then(function([profiles, recordings]) {
+        const tbody = $('#recordings-list');
+        tbody.empty();
+
+        Object.entries(recordings).forEach(([id, recording]) => {
+            const profile = profiles.find(p => p.id === id) || { name: 'Unknown Profile' };
+            
+            tbody.append(`
+                <tr>
+                    <td>${profile.name}</td>
+                    <td>${recording.images}</td>
+                    <td>${formatDate(recording.first)}</td>
+                    <td>${formatDate(recording.last)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-1" onclick="inspectRecording('${id}')">
+                            Inspect
+                        </button>
+                        <button class="btn btn-sm btn-success me-1" onclick="exportRecording('${id}')">
+                            Export
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="flushRecording('${id}')">
+                            Flush
+                        </button>
+                    </td>
+                </tr>
+            `);
+        });
+    });
+});
+
+// Action button handlers (to be implemented)
+function inspectRecording(id) {
+    console.log('Inspect:', id);
+}
+
+function exportRecording(id) {
+    console.log('Export:', id);
+}
+
+function flushRecording(id) {
+    if (!confirm('Are you sure you want to flush this recording?')) return;
+    
+    $.ajax({
+        type: "DELETE",
+        url: `recordings?id=${id}`,
+        success: function() {
+            location.reload();
+        }
+    });
+}
+</script>
+
+</body>
+</html>

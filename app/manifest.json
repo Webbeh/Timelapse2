@@ -1,0 +1,37 @@
+{
+    "schemaVersion": "1.7.1",
+    "acapPackageConf": {
+        "setup": {
+            "friendlyName": "Timelapse2",
+            "appName": "timelapse2",
+            "vendor": "Fred Juhlin",
+            "embeddedSdkVersion": "3.0",
+            "vendorUrl": "https://pandosme.github.io",
+            "runMode": "once",
+            "version": "0.9.0"
+        },
+        "configuration": {
+			"settingPage": "index.html",
+			"httpConfig": [
+				{"access": "admin","name": "app","type": "fastCgi"},
+				{"access": "admin","name": "settings","type": "fastCgi"},
+				{"access": "admin","name": "status","type": "fastCgi"},
+				{"access": "admin","name": "timelapse","type": "fastCgi"},
+				{"access": "admin","name": "recordings","type": "fastCgi"},
+				{"access": "admin","name": "events","type": "fastCgi"},
+				{"access": "admin","name": "frames","type": "fastCgi"},
+				{"access": "admin","name": "archives","type": "fastCgi"},
+				{"access": "admin","name": "sunevents","type": "fastCgi"}
+			]
+		}
+    },
+    "resources": {
+        "linux": {
+            "user": {
+                "groups": [
+                    "storage"
+                ]
+            }
+        }
+    }
+}
