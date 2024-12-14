@@ -8,7 +8,7 @@
             "embeddedSdkVersion": "3.0",
             "vendorUrl": "https://pandosme.github.io",
             "runMode": "once",
-            "version": "0.9.0"
+            "version": "0.9.1"
         },
         "configuration": {
 			"settingPage": "index.html",
@@ -18,9 +18,8 @@
 				{"access": "admin","name": "status","type": "fastCgi"},
 				{"access": "admin","name": "timelapse","type": "fastCgi"},
 				{"access": "admin","name": "recordings","type": "fastCgi"},
-				{"access": "admin","name": "events","type": "fastCgi"},
-				{"access": "admin","name": "frames","type": "fastCgi"},
-				{"access": "admin","name": "archives","type": "fastCgi"},
+				{"access": "admin","name": "image","type": "fastCgi"},
+				{"access": "admin","name": "download","type": "fastCgi"},
 				{"access": "admin","name": "sunevents","type": "fastCgi"}
 			]
 		}

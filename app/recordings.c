@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -106,7 +107,7 @@ Recordings_Capture(cJSON* profile) {
     if (!recording) {
         recording = cJSON_CreateObject();
         cJSON_AddItemToObject(Recordings_Container, profileId, recording);
-        cJSON_AddNumberToObject(recording, "images", 0);
+        cJSON_AddNumberToObject(recording, "images", 1);
         cJSON_AddNumberToObject(recording, "first", timestamp);
         cJSON_AddNumberToObject(recording, "last", timestamp);
     } else {
@@ -114,6 +115,9 @@ Recordings_Capture(cJSON* profile) {
         cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "images"), 
                            cJSON_GetObjectItem(recording, "images")->valueint + 1);
     }
+
+	int sequence = cJSON_GetObjectItem(recording, "images")->valueint;
+
     
     save_recordings();
 
@@ -140,9 +144,9 @@ Recordings_Capture(cJSON* profile) {
     }
 
     // Save image to file
-    char filename[256];
-    snprintf(filename, sizeof(filename), "/var/spool/storage/SD_DISK/timelapse2/%s/%lld.jpg", 
-             profileId, (long long)timestamp);
+	char filename[256];
+	snprintf(filename, sizeof(filename), "/var/spool/storage/SD_DISK/timelapse2/%s/image%05d.jpg", 
+			 profileId, sequence);
 
     FILE* f = fopen(filename, "wb");
     if (!f) {
@@ -242,10 +246,127 @@ HTTP_Endpoint_Recordings(const ACAP_HTTP_Response response,
     ACAP_HTTP_Respond_Error(response, 405, "Method not allowed");
 }
 
+static void HTTP_Endpoint_Image(const ACAP_HTTP_Response response, 
+                                const ACAP_HTTP_Request request) {
+    const char* method = ACAP_HTTP_Get_Method(request);
+    
+    if (strcmp(method, "GET") != 0) {
+        ACAP_HTTP_Respond_Error(response, 405, "Method not allowed");
+        return;
+    }
+
+    const char* profileId = ACAP_HTTP_Request_Param(request, "id");
+    const char* indexStr = ACAP_HTTP_Request_Param(request, "index");
+
+    if (!profileId || !indexStr) {
+        ACAP_HTTP_Respond_Error(response, 400, "Missing parameters");
+        return;
+    }
+
+    int index = atoi(indexStr);
+    
+    char filename[256];
+    snprintf(filename, sizeof(filename), "/var/spool/storage/SD_DISK/timelapse2/%s/image%05d.jpg", 
+             profileId, index);
+
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        ACAP_HTTP_Respond_Error(response, 404, "Image not found");
+        return;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* buffer = malloc(fileSize);
+    if (!buffer) {
+        fclose(file);
+        ACAP_HTTP_Respond_Error(response, 500, "Memory allocation failed");
+        return;
+    }
+
+    fread(buffer, 1, fileSize, file);
+    fclose(file);
+
+    ACAP_HTTP_Respond_String(response, "status: 200 OK\r\n");
+    ACAP_HTTP_Respond_String(response, "Content-Type: image/jpeg\r\n");
+    ACAP_HTTP_Respond_String(response, "Content-Length: %ld\r\n", fileSize);
+    ACAP_HTTP_Respond_String(response, "\r\n");
+
+    int result = ACAP_HTTP_Respond_Data(response, fileSize, buffer);
+    if (result != 1) {
+        LOG_WARN("%s: Failed to send image data\n", __func__);
+    }
+
+    free(buffer);
+}
+
+static void
+HTTP_Endpoint_Download(const ACAP_HTTP_Response response, 
+                                const ACAP_HTTP_Request request) {
+    const char* method = ACAP_HTTP_Get_Method(request);
+    
+    if (strcmp(method, "GET") != 0) {
+        ACAP_HTTP_Respond_Error(response, 405, "Method not allowed");
+        return;
+    }
+
+    const char* profileId = ACAP_HTTP_Request_Param(request, "id");
+    const char* indexStr = ACAP_HTTP_Request_Param(request, "index");
+
+    if (!profileId || !indexStr) {
+        ACAP_HTTP_Respond_Error(response, 400, "Missing parameters");
+        return;
+    }
+
+    int index = atoi(indexStr);
+    
+    char filename[256];
+    snprintf(filename, sizeof(filename), "/var/spool/storage/SD_DISK/timelapse2/%s/image%05d.jpg", 
+             profileId, index);
+
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        ACAP_HTTP_Respond_Error(response, 404, "Image not found");
+        return;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* buffer = malloc(fileSize);
+    if (!buffer) {
+        fclose(file);
+        ACAP_HTTP_Respond_Error(response, 500, "Memory allocation failed");
+        return;
+    }
+
+    fread(buffer, 1, fileSize, file);
+    fclose(file);
+
+    char downloadName[64];
+    snprintf(downloadName, sizeof(downloadName), "image%05d.jpg", index);
+
+    ACAP_HTTP_Respond_String(response, "status: 200 OK\r\n");
+    ACAP_HTTP_Respond_String(response, "Content-Description: File Transfer\r\n");
+    ACAP_HTTP_Respond_String(response, "Content-Type: image/jpeg\r\n");
+    ACAP_HTTP_Respond_String(response, "Content-Disposition: attachment; filename=%s\r\n", downloadName);
+    ACAP_HTTP_Respond_String(response, "Content-Transfer-Encoding: binary\r\n");
+    ACAP_HTTP_Respond_String(response, "Content-Length: %lu\r\n", fileSize);
+    ACAP_HTTP_Respond_String(response, "\r\n");
+    ACAP_HTTP_Respond_Data(response, fileSize, buffer);
+
+    free(buffer);
+}
+
 int
 Recordings_Init(void) {
 	LOG_TRACE("%s:\n",__func__);
     cJSON* recordings = load_recordings();
     ACAP_HTTP_Node("recordings", HTTP_Endpoint_Recordings);
+	ACAP_HTTP_Node("image", HTTP_Endpoint_Image);
+	ACAP_HTTP_Node("download", HTTP_Endpoint_Image);
     return 0;
 }
