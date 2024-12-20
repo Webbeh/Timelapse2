@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/app.css">
     <script src="js/jquery-3.7.1.min.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
-    <script src="js/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div class="d-flex" id="wrapper">
@@ -96,7 +96,7 @@
 $(document).ready(function () {
     // Function to check if Leaflet is loaded
     function isLeafletLoaded() {
-        return typeof L !== 'undefined';
+        return typeof L !== 'undefined' && typeof L.map === 'function';
     }
 
     // Initialize map or show error
