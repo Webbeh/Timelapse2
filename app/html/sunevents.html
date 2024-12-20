@@ -95,16 +95,14 @@
 <script>
 $(document).ready(function () {
     // Function to check if Leaflet is loaded
-	let map = 0;
     function isLeafletLoaded() {
-//        return typeof L !== 'undefined';
-		return false;
+        return typeof L !== 'undefined';
     }
 
     // Initialize map or show error
     if (isLeafletLoaded()) {
         try {
-            map = L.map('map').setView([51.505, -0.09], 13);
+            const map = L.map('map').setView([51.505, -0.09], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
@@ -116,35 +114,47 @@ $(document).ready(function () {
                 const lat = e.latlng.lat;
                 const lon = e.latlng.lng;
 
-                // Update location display
-                $('#lat').text(lat.toFixed(6));
-                $('#lon').text(lon.toFixed(6));
-
-                // Update marker
+                // Update or create a draggable marker
                 if (marker) {
                     marker.setLatLng(e.latlng);
                 } else {
-                    marker = L.marker(e.latlng).addTo(map);
+                    marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+
+                    // Update location on dragend
+                    marker.on('dragend', function (event) {
+                        const position = event.target.getLatLng();
+                        updateLocation(position.lat, position.lng);
+                    });
                 }
 
-                // Save location via AJAX
-                $.ajax({
-                    type: 'POST',
-                    url: 'sunevents',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ lat, lon }),
-                    success: function () {
-                        // Fetch updated sun events
-                        $.ajax({
-                            type: 'GET',
-                            url: 'sunevents',
-                            success: updateSunEvents
-                        });
-                    }
-                });
+                // Update location display immediately after click
+                updateLocation(lat, lon);
             });
 
             // Load initial data
+            $.ajax({
+                type: 'GET',
+                url: 'sunevents',
+                success: function (data) {
+                    updateSunEvents(data);
+                    if (data.lat && data.lon) {
+                        const pos = [data.lat, data.lon];
+                        map.setView(pos, 13);
+
+                        // Create a draggable marker at the initial position
+                        marker = L.marker(pos, { draggable: true }).addTo(map);
+
+                        // Update location on dragend
+                        marker.on('dragend', function (event) {
+                            const position = event.target.getLatLng();
+                            updateLocation(position.lat, position.lng);
+                        });
+
+                        $('#lat').text(data.lat.toFixed(6));
+                        $('#lon').text(data.lon.toFixed(6));
+                    }
+                }
+            });
         } catch (error) {
             console.error("Error initializing map:", error);
             showMapError();
@@ -153,23 +163,6 @@ $(document).ready(function () {
         showMapError();
     }
 
-	$.ajax({
-		type: 'GET',
-		url: 'sunevents',
-		success: function (data) {
-			updateSunEvents(data);
-			if (data.lat && data.lon) {
-				if (isLeafletLoaded()) {
-					const pos = [data.lat, data.lon];
-					map.setView(pos, 13);
-					marker = L.marker(pos).addTo(map);
-				}
-				$('#lat').text(data.lat.toFixed(6));
-				$('#lon').text(data.lon.toFixed(6));
-			}
-		}
-	});
-
     // Handle manual location form submission
     $('#manual-location-form').on('submit', function (e) {
         e.preventDefault();
@@ -177,8 +170,7 @@ $(document).ready(function () {
         const lon = parseFloat($('#manual-lon').val());
 
         if (!isNaN(lat) && !isNaN(lon)) {
-            $('#lat').text(lat.toFixed(6));
-            $('#lon').text(lon.toFixed(6));
+            updateLocation(lat, lon);
 
             // Save location via AJAX
             $.ajax({
@@ -204,6 +196,28 @@ $(document).ready(function () {
     function showMapError() {
         $('#map').hide();
         $('#map-error').show();
+    }
+
+    // Update location display and send data to server
+    function updateLocation(lat, lon) {
+        $('#lat').text(lat.toFixed(6));
+        $('#lon').text(lon.toFixed(6));
+
+        // Save location via AJAX
+        $.ajax({
+            type: 'POST',
+            url: 'sunevents',
+            contentType: 'application/json',
+            data: JSON.stringify({ lat, lon }),
+            success: function () {
+                // Fetch updated sun events
+                $.ajax({
+                    type: 'GET',
+                    url: 'sunevents',
+                    success: updateSunEvents
+                });
+            }
+        });
     }
 
     // Update sun events display

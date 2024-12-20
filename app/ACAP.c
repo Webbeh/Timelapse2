@@ -28,8 +28,8 @@
 // Logging macros
 #define LOG(fmt, args...) { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...) { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...) { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...) {}
+//#define LOG_TRACE(fmt, args...) { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+#define LOG_TRACE(fmt, args...) {}
 
 // Global variables
 static cJSON* app = NULL;
@@ -1327,6 +1327,7 @@ ACAP_DEVICE_Latitude() {
 
 int
 ACAP_DEVICE_Set_Location( double lat, double lon) {
+	LOG_TRACE("%s: %f %f\n",__func__,lat,lon);
 	if( !ACAP_DEVICE_Container )
 		return 0;
 	cJSON* location = cJSON_GetObjectItem(ACAP_DEVICE_Container,"location");
@@ -1335,7 +1336,7 @@ ACAP_DEVICE_Set_Location( double lat, double lon) {
 		return 0;
 	}
 	cJSON_ReplaceItemInObject(location,"lat",cJSON_CreateNumber(lat));
-	cJSON_ReplaceItemInObject(location,"on",cJSON_CreateNumber(lon));
+	cJSON_ReplaceItemInObject(location,"lon",cJSON_CreateNumber(lon));
 	return SetLocationData(location);
 }
 
@@ -2465,12 +2466,10 @@ const char* ACAP_Get_Error_String(ACAP_Status status) {
  * Helper functions
  *------------------------------------------------------------------*/
 
-cJSON*
-SplitString(const char* input, const char* delimiter) {
+cJSON* SplitString(const char* input, const char* delimiter) {
     if (!input || !delimiter) {
         return NULL; // Invalid input
     }
-//	LOG_TRACE("%s: %s %s\n",__func__,delimiter, input);
 
     // Create a cJSON array to hold the split strings
     cJSON* json_array = cJSON_CreateArray();
@@ -2483,6 +2482,12 @@ SplitString(const char* input, const char* delimiter) {
     if (!input_copy) {
         cJSON_Delete(json_array);
         return NULL; // Memory allocation failure
+    }
+
+    // Remove trailing newline character, if present
+    size_t len = strlen(input_copy);
+    if (len > 0 && input_copy[len - 1] == '\n') {
+        input_copy[len - 1] = '\0';
     }
 
     // Use strtok to split the string by the delimiter
@@ -2504,7 +2509,6 @@ SplitString(const char* input, const char* delimiter) {
     free(input_copy); // Free the temporary copy of the input string
     return json_array;
 }
-
 
 char**
 string_split( char* a_str,  char a_delim) {
