@@ -8,7 +8,7 @@
             "embeddedSdkVersion": "3.0",
             "vendorUrl": "https://pandosme.github.io",
             "runMode": "once",
-            "version": "0.9.5"
+            "version": "0.9.7"
         },
         "configuration": {
 			"settingPage": "index.html",
@@ -31,6 +31,11 @@
                     "storage"
                 ]
             }
-        }
+        },
+		"dbus": {
+			"requiredMethods": [
+				"com.axis.HTTPConf1.VAPIXServiceAccounts1.GetCredentials"
+			]
+		}
     }
 }

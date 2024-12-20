@@ -35,8 +35,6 @@ typedef unsigned int DWORD;
                   ((x<<24) & 0xff000000))
 
 #define AVIF_HASINDEX 0x00000010
-#define DEFAULT_FPS	10
-
 
 struct AVI_HEADER_STRUCT {
     DWORD LIST_RIFF;      // "RIFF"
@@ -466,6 +464,7 @@ int Recordings_Capture(cJSON* profile) {
     }
 
     unsigned int frames = 0;
+    unsigned int fps = 10;
     DWORD totalJPEGSize = 0;
 
     cJSON* recording = cJSON_GetObjectItem(Recordings_Container, profileId);
@@ -477,8 +476,10 @@ int Recordings_Capture(cJSON* profile) {
         cJSON_AddNumberToObject(recording, "size", 0);
         cJSON_AddNumberToObject(recording, "first", timestamp);
         cJSON_AddNumberToObject(recording, "last", 0);
+        cJSON_AddNumberToObject(recording, "fps", 10);
     } else {
         frames = cJSON_GetObjectItem(recording, "images")->valueint;
+        fps = cJSON_GetObjectItem(recording, "fps")?cJSON_GetObjectItem(recording, "fps")->valueint:10;
         totalJPEGSize = cJSON_GetObjectItem(recording, "size")->valueint;
     }
 
@@ -488,7 +489,7 @@ int Recordings_Capture(cJSON* profile) {
     FILE* aviFile = fopen(filepath, "rb+");
     if (!aviFile) {
         aviFile = fopen(filepath, "wb+");
-		write_avi_header(aviFile, 1, jpegSize, width, height, DEFAULT_FPS);
+		write_avi_header(aviFile, 1, jpegSize, width, height, fps);
 	}
 
     // Open or create index file
@@ -512,7 +513,7 @@ int Recordings_Capture(cJSON* profile) {
 	totalJPEGSize += frameSize;
 	frames++;
     avi_add_index_entry(indexFile, frames, frameSize);
-	write_avi_header(aviFile, frames, totalJPEGSize, width, height, DEFAULT_FPS);
+	write_avi_header(aviFile, frames, totalJPEGSize, width, height, fps);
 
 	cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "last"), timestamp);
 	cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "images"), frames);
@@ -628,6 +629,7 @@ HTTP_Endpoint_Image(const ACAP_HTTP_Response response,
 }
 
 static void update_avi_fps(FILE* f, unsigned int fps) {
+	LOG_TRACE("%s: Updating FPS=%d\n",__func__,fps);
     // Update microseconds per frame
     fseek(f, offsetof(AVI_HEADER, AVIH_MicroSecPerFrame), SEEK_SET);
     DWORD usec = LILEND4(1000000/fps);
@@ -643,19 +645,27 @@ static void update_avi_fps(FILE* f, unsigned int fps) {
 static void HTTP_Endpoint_Export(const ACAP_HTTP_Response response, 
                                const ACAP_HTTP_Request request) {
     const char* method = ACAP_HTTP_Get_Method(request);
+	LOG_TRACE("%s: %s\n", __func__,method);
     if (strcmp(method, "GET") != 0) {
         ACAP_HTTP_Respond_Error(response, 405, "Method not allowed");
         return;
     }
 
     const char* profileId = ACAP_HTTP_Request_Param(request, "id");
-    const char* fps = ACAP_HTTP_Request_Param(request, "fps");
+    const char* fpsString = ACAP_HTTP_Request_Param(request, "fps");
     const char* filename = ACAP_HTTP_Request_Param(request, "filename");
+
+
     
-    if (!profileId || !fps || !filename) {
+    if (!profileId || !fpsString || !filename) {
         ACAP_HTTP_Respond_Error(response, 400, "Missing parameters");
         return;
     }
+	LOG_TRACE("%s: %s %s %s\n", __func__, profileId, filename, fpsString );
+
+	int fps = atoi(fpsString);
+	if( fps < 1 ) fps = 1;
+	if (fps > 60) fps = 60;
 
     char avipath[PATH_MAX_LEN], idxpath[PATH_MAX_LEN];
     snprintf(avipath, sizeof(avipath), 
@@ -663,7 +673,7 @@ static void HTTP_Endpoint_Export(const ACAP_HTTP_Response response,
     snprintf(idxpath, sizeof(idxpath), 
              "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.idx", profileId);
 
-    FILE* aviFile = fopen(avipath, "rb");
+	FILE* aviFile = fopen(avipath, "rb+");
     FILE* idxFile = fopen(idxpath, "rb");
     
     if (!aviFile || !idxFile) {
@@ -673,8 +683,19 @@ static void HTTP_Endpoint_Export(const ACAP_HTTP_Response response,
         return;
     }
 
-    // Update FPS in AVI header
-    update_avi_fps(aviFile, atoi(fps));
+    cJSON* recording = cJSON_GetObjectItem(Recordings_Container, profileId);
+	if( recording ) {
+		if( !cJSON_GetObjectItem(recording,"fps") ) {
+			cJSON_AddNumberToObject(recording,"fps",fps );
+			update_avi_fps(aviFile, fps);
+			save_recordings();
+		}
+		if( cJSON_GetObjectItem(recording,"fps")->valueint != fps ) {
+			cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "fps"), fps);
+			update_avi_fps(aviFile, fps);
+			save_recordings();
+		}
+	}
 
     // Get file sizes
     fseek(aviFile, 0, SEEK_END);
@@ -686,7 +707,7 @@ static void HTTP_Endpoint_Export(const ACAP_HTTP_Response response,
     // Reset file positions
     fseek(aviFile, 0, SEEK_SET);
     fseek(idxFile, 0, SEEK_SET);
-
+	LOG_TRACE("%s: Uploading %s %ld\n",__func__,filename,totalSize);
     // Send response headers
     ACAP_HTTP_Respond_String(response, "status: 200 OK\r\n");
     ACAP_HTTP_Respond_String(response, "Content-Type: video/x-msvideo\r\n");
@@ -767,7 +788,7 @@ HTTP_Endpoint_Recordings(const ACAP_HTTP_Response response,
 				if (strcmp(entry->d_name, ".") == 0 || 
 					strcmp(entry->d_name, "..") == 0)
 					continue;
-
+					
 				char filepath[PATH_MAX_LEN];
 				sprintf(filepath, "%s/%s", path, entry->d_name);
 				unlink(filepath);
@@ -783,8 +804,8 @@ HTTP_Endpoint_Recordings(const ACAP_HTTP_Response response,
 			cJSON_DeleteItemFromObject(Recordings_Container, profileId);
 			save_recordings();
 		}
-		
-		ACAP_HTTP_Respond_Text(response, "Recordings cleared");
+
+		ACAP_HTTP_Respond_Text(response, "Recording deleted");
 		return;
 	}
 

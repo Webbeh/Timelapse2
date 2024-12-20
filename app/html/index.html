@@ -3,32 +3,27 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recordings</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Timelapse</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/app.css">
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
 <div class="d-flex" id="wrapper">
     <div class="bg-light border-right" id="sidebar-wrapper">
-        <div class="sidebar-heading">Timelapse</div>
+        <div class="sidebar-heading">&nbsp;Timelapse&nbsp;</div>
         <div class="list-group list-group-flush">
-            <a href="index.html" class="list-group-item list-group-item-action active">Recordings</a>
-            <a href="timelapse.html" class="list-group-item list-group-item-action">Profiles</a>
-            <a href="sunevents.html" class="list-group-item list-group-item-action">Sun Events</a>
+            <a href="index.html" class="list-group-item list-group-item-action active">Active Captures</a>
+            <a href="timelapse.html" class="list-group-item list-group-item-action">Settings</a>
+            <a href="sunevents.html" class="list-group-item list-group-item-action">Location</a>
+            <a href="archive.html" class="list-group-item list-group-item-action">Archive</a>
             <a href="about.html" class="list-group-item list-group-item-action">About</a>
         </div>
     </div>
     
     <div id="page-content-wrapper" class="p-0">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
-            <span class="acap_name"></span>
-        </nav>
-
         <div class="container-fluid">
-            <h1>Recordings</h1>
             <div class="table-responsive mt-4">
                 <table class="table table-striped">
                     <thead>
@@ -64,7 +59,6 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="downloadButton">Download</button>
                 </div>
             </div>
         </div>
@@ -99,6 +93,9 @@
 </div>
 
 <script>
+
+var TimelapseRecordings = 0;
+
 $(document).ready(function() {
     let currentProfileId = null;
     let currentImageIndex = 1;
@@ -126,9 +123,10 @@ $(document).ready(function() {
         $.ajax({ url: 'timelapse', type: 'GET' }),
         $.ajax({ url: 'recordings', type: 'GET' })
     ]).then(function([profiles, recordings]) {
+		TimelapseRecordings	= recordings;
         const tbody = $('#recordings-list');
         tbody.empty();
-
+		
         Object.entries(recordings).forEach(([id, recording]) => {
             const profile = profiles.find(p => p.id === id) || { name: 'Unknown Profile' };
             var tr = '<tr>';
@@ -140,7 +138,7 @@ $(document).ready(function() {
             tr += '<td>';
             tr += '<button class="btn btn-sm btn-primary me-1" onclick="inspectRecording(\'' + id + '\')">Inspect</button>';
             tr += '<button class="btn btn-sm btn-success me-1" onclick="exportRecording(\'' + id + '\')">Export</button>';
-            tr += '<button class="btn btn-sm btn-danger" onclick="flushRecording(\'' + id + '\')">Flush</button>';
+            tr += '<button class="btn btn-sm btn-danger" onclick="flushRecording(\'' + id + '\')">Delete</button>';
             tr += '</td>';
             tr += '</tr>';
             tbody.append(tr);
@@ -173,7 +171,11 @@ $(document).ready(function() {
 		// Get profile name from the table
 		const profileName = $(`tr:has(button[onclick="exportRecording('${id}')"])`).find('td:first').text();
 		const filename = profileName.replace(/\s+/g, '_') + '.avi';
-		
+		var recording = TimelapseRecordings[id];
+		if( recording.hasOwnProperty("fps") )
+			$('#exportFps').val( recording.fps);
+		else
+			$('#exportFps').val( 10 );
 		$('#exportFilename').val(filename);
 		$('#exportProfileId').val(id);
 		$('#exportModal').modal('show');

@@ -115,9 +115,14 @@ int 		ACAP_FILE_Exists(const char* filepath);
 /*-----------------------------------------------------
  * Device Information
  *-----------------------------------------------------*/
+double		ACAP_DEVICE_Longitude();
+double		ACAP_DEVICE_Latitude();
+
+int			ACAP_DEVICE_Set_Location( double lat, double lon);
+//Properties: serial, model, platform, chip, firmware, aspect, 
 const char* ACAP_DEVICE_Prop(const char* name);
 int 		ACAP_DEVICE_Prop_Int(const char* name);
-cJSON* 		ACAP_DEVICE_JSON(const char* name);
+cJSON* 		ACAP_DEVICE_JSON(const char* name); //location, 
 int 		ACAP_DEVICE_Seconds_Since_Midnight(void);
 double 		ACAP_DEVICE_Timestamp(void);
 const char* ACAP_DEVICE_Local_Time(void);
@@ -140,11 +145,17 @@ char* 		ACAP_STATUS_String(const char* group, const char* name);
 cJSON* 		ACAP_STATUS_Object(const char* group, const char* name);
 
 // Status setters
-void ACAP_STATUS_SetBool(const char* group, const char* name, int state);
-void ACAP_STATUS_SetNumber(const char* group, const char* name, double value);
-void ACAP_STATUS_SetString(const char* group, const char* name, const char* string);
-void ACAP_STATUS_SetObject(const char* group, const char* name, cJSON* data);
-void ACAP_STATUS_SetNull(const char* group, const char* name);
+void		ACAP_STATUS_SetBool(const char* group, const char* name, int state);
+void		ACAP_STATUS_SetNumber(const char* group, const char* name, double value);
+void		ACAP_STATUS_SetString(const char* group, const char* name, const char* string);
+void		ACAP_STATUS_SetObject(const char* group, const char* name, cJSON* data);
+void		ACAP_STATUS_SetNull(const char* group, const char* name);
+
+/*-----------------------------------------------------
+ * VAPIX
+ *-----------------------------------------------------*/
+char*		ACAP_VAPIX_Get(const char *request);
+char*		ACAP_VAPIX_Post(const char *request, const char* body );
 
 
 #ifdef __cplusplus

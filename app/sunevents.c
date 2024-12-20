@@ -109,8 +109,11 @@ int SunEvents_Set(cJSON* location) {
     
     if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
         LOG_WARN("%s: Invalid coordinates lat=%f, lon=%f\n", __func__, lat, lon);
-        return -1;
+        return 0;
     }
+
+	if( !ACAP_DEVICE_Set_Location( lat, lon) )
+		LOG_WARN("%s: Error storing GeoLocation\n",__func__);
     
     if (!SunEventsSettings) {
 		SunEventsSettings = cJSON_CreateObject();
@@ -125,7 +128,7 @@ int SunEvents_Set(cJSON* location) {
 	
     LOG_TRACE("%s: Setting location to lat=%f, lon=%f\n", __func__, lat, lon);
     Calculate_Sun_Events(lat, lon);
-    return 0;
+    return 1;
 }
 
 int SunEvents_Between_Dawn_Dusk() {
@@ -137,7 +140,20 @@ int SunEvents_Between_Dawn_Dusk() {
     
     time_t now;
     time(&now);
-    return (now >= dawn_obj->valuedouble && now <= dusk_obj->valuedouble) ? 1 : 0;
+    
+    // Convert timestamps to time of day (seconds since midnight)
+    struct tm* tm_now = localtime(&now);
+    int now_seconds = tm_now->tm_hour * 3600 + tm_now->tm_min * 60 + tm_now->tm_sec;
+    
+    time_t dawn = (time_t)dawn_obj->valuedouble;
+    time_t dusk = (time_t)dusk_obj->valuedouble;
+    struct tm* tm_dawn = localtime(&dawn);
+    struct tm* tm_dusk = localtime(&dusk);
+    
+    int dawn_seconds = tm_dawn->tm_hour * 3600 + tm_dawn->tm_min * 60 + tm_dawn->tm_sec;
+    int dusk_seconds = tm_dusk->tm_hour * 3600 + tm_dusk->tm_min * 60 + tm_dusk->tm_sec;
+    
+    return (now_seconds >= dawn_seconds && now_seconds <= dusk_seconds) ? 1 : 0;
 }
 
 int SunEvents_Between_Sunrise_Sunset() {
@@ -149,7 +165,20 @@ int SunEvents_Between_Sunrise_Sunset() {
     
     time_t now;
     time(&now);
-    return (now >= sunrise_obj->valuedouble && now <= sunset_obj->valuedouble) ? 1 : 0;
+    
+    // Convert timestamps to time of day (seconds since midnight)
+    struct tm* tm_now = localtime(&now);
+    int now_seconds = tm_now->tm_hour * 3600 + tm_now->tm_min * 60 + tm_now->tm_sec;
+    
+    time_t sunrise = (time_t)sunrise_obj->valuedouble;
+    time_t sunset = (time_t)sunset_obj->valuedouble;
+    struct tm* tm_sunrise = localtime(&sunrise);
+    struct tm* tm_sunset = localtime(&sunset);
+    
+    int sunrise_seconds = tm_sunrise->tm_hour * 3600 + tm_sunrise->tm_min * 60 + tm_sunrise->tm_sec;
+    int sunset_seconds = tm_sunset->tm_hour * 3600 + tm_sunset->tm_min * 60 + tm_sunset->tm_sec;
+    
+    return (now_seconds >= sunrise_seconds && now_seconds <= sunset_seconds) ? 1 : 0;
 }
 
 static void HTTP_Endpoint_Sunevents(const ACAP_HTTP_Response response, const ACAP_HTTP_Request request) {
@@ -207,19 +236,8 @@ int SunEvents_Init() {
     SunEventsSettings = cJSON_CreateObject();
     if (!SunEventsSettings) return -1;
     
-    // Load initial location from settings
-    cJSON* settings = ACAP_Get_Config("settings");
-    double lat = 51, lon = 0;
-    
-    if (settings) {
-        cJSON* location = cJSON_GetObjectItem(settings, "geolocation");
-        if (location) {
-            lon = cJSON_GetObjectItem(location, "lon") ? 
-                  cJSON_GetObjectItem(location, "lon")->valuedouble : 0;
-            lat = cJSON_GetObjectItem(location, "lat") ? 
-                  cJSON_GetObjectItem(location, "lat")->valuedouble : 0;
-        }
-    }
+    double lat = ACAP_DEVICE_Latitude();
+	double lon = ACAP_DEVICE_Longitude();
 
     SunEventsSettings = cJSON_CreateObject();
     if (!SunEventsSettings) {

@@ -11,8 +11,8 @@
 
 #define LOG(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...)    { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...)    {}
+#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+//#define LOG_TRACE(fmt, args...)    {}
 
 #define TIMELAPSE_PATH "/var/spool/storage/SD_DISK/timelapse2/timelapse.json"
 
@@ -234,8 +234,6 @@ int Timelapse_Remove_Profile_By_Id(const char* id) {
     } else {
         LOG_TRACE("%s: Profile %s not found\n", __func__, id);
     }
-    
-    DeleteDirectory(id);
     return 1;
 }
 
@@ -284,11 +282,6 @@ Timelapse_Activate_Profile( cJSON* profile ) {
 
 	cJSON* triggerEvent = cJSON_GetObjectItem(profile,"triggerEvent");
 	cJSON* timer = cJSON_GetObjectItem(profile,"timer");
-
-	if(!triggerEvent || !timer) {
-		LOG("%s: Invalid trigger\n",__func__);
-		return 0;
-	}
 
 	if( timer && timer->type == cJSON_Number ) {
 		Setup_Timer(profile);
@@ -348,8 +341,9 @@ static int Timelapse_Load_Profiles() {
         if (id_obj && id_obj->valuestring) {
             Ensure_Directory_Exists(id_obj->valuestring);
         }
-		Timelapse_Activate_Profile(profile);
+		Timelapse_Activate_Profile(cJSON_Duplicate(profile, 1));
     }
+	cJSON_Delete(fileList);
     free(data);
     return 1;
 }
@@ -500,18 +494,26 @@ static void HTTP_Endpoint_Timelpase(const ACAP_HTTP_Response response, const ACA
     // Handle DELETE: Remove a timelapse profile by ID
 	if (strcmp(method, "DELETE") == 0) {
 		const char* id = ACAP_HTTP_Request_Param(request, "id");
+		LOG_TRACE("%s: DELETE %s\n",__func__,id);
 		if (!id) {
+			LOG_WARN("%s: DELETE missing id parameter\n", __func__);
 			ACAP_HTTP_Respond_Error(response, 400, "Missing 'id' parameter");
 			return;
 		}
 
-		// Delete the profile
-		if (Timelapse_Remove_Profile_By_Id(id) != 0) {
+		// Remove from profiles
+		if (!Timelapse_Remove_Profile_By_Id(id)) {
+			LOG_WARN("%s: DELETE failed on %s\n", __func__,id);
 			ACAP_HTTP_Respond_Error(response, 500, "Failed to delete timelapse profile");
 			return;
 		}
-		ACAP_HTTP_Respond_Text(response, "Timelapse deleted successfully");
+
+		// Save changes
 		Timelapse_Save_Profiles();
+
+		// Respond success
+		ACAP_HTTP_Respond_Text(response, "Timelapse deleted successfully");
+		LOG_TRACE("%s: DELETE Success\n",__func__);
 		return;
 	}
 

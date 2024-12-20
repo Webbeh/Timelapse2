@@ -2,5 +2,7 @@
 	"geolocation": {
 		"lat": 51.477928,
 		"lon": 0
-	}
+	},
+	"archiveSize": 500,
+	"archiveTime": "None",
 }

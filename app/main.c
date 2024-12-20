@@ -24,12 +24,18 @@
 #define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 //#define LOG_TRACE(fmt, args...)    {}
 
-void
-Trigger(cJSON *profile) {
-	char* json = cJSON_PrintUnformatted(profile);
-	LOG_TRACE("%s: %s\n", __func__,json);
-	free(json);
-	Recordings_Capture(profile);
+void Trigger(cJSON* profile) {
+    // Check if profile has conditions
+    const char* conditions = cJSON_GetStringValue(cJSON_GetObjectItem(profile, "conditions"));
+    if (conditions) {
+        if (strcmp(conditions, "dawn_dusk") == 0 && !SunEvents_Between_Dawn_Dusk())
+			return;
+		if (strcmp(conditions, "sunrise_sunset") == 0 && !SunEvents_Between_Sunrise_Sunset())
+			return;
+    }
+
+    // All conditions met or no conditions, capture the recording
+    Recordings_Capture(profile);
 }
 
 
@@ -80,9 +86,9 @@ int main(void) {
 
     // Initialize ACAP and Timelapse
     ACAP(APP_PACKAGE, Settings_Updated_Callback);
-    SunEvents_Init();
     Timelapse_Init(Trigger);
 	Recordings_Init();
+    SunEvents_Init();
 	
     // Create and run the main loop
 	main_loop = g_main_loop_new(NULL, FALSE);
