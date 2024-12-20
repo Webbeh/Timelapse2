@@ -18,3 +18,6 @@ Still under development
 ### 0.9.5	December 19, 2024
 - Added Inspect
 - Added Export
+
+### 0.9.7	December 20, 2024
+- General update, bug fixes and more refactoring
