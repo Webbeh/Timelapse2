@@ -15,8 +15,8 @@
 
 #define LOG(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...)    { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...)    {}
+//#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+#define LOG_TRACE(fmt, args...)    {}
 
 #define PATH_MAX_LEN 1024
 #define RIFF_HEADER_SIZE 44
@@ -241,7 +241,7 @@ static int avi_add_index_entry(FILE* file, unsigned int frames, unsigned int jpe
     AVI_INDEX_ENTRY prev_entry;
     AVIOLDINDEX header;
     size_t offset;
-
+	LOG_TRACE("%s: Frames = %d \n",__func__);
     if (!file) return 0;
 
     // Update index header with correct size
@@ -274,6 +274,9 @@ static size_t write_avi_frame(FILE* f, const unsigned char* data, size_t size) {
 	fseek(f, 0, SEEK_END);	
     unsigned int padding = (4-(size%4)) % 4;
     size_t total_size = size + padding;
+
+	LOG_TRACE("%s:\n",__func__);
+
     
     LIST_INDEX lindex;
     lindex.fourCC = FOURCC("00db");

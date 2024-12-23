@@ -21,21 +21,35 @@
 
 #define LOG(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...)    { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...)    {}
+//#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+#define LOG_TRACE(fmt, args...)    {}
 
 void Trigger(cJSON* profile) {
-    // Check if profile has conditions
-    const char* conditions = cJSON_GetStringValue(cJSON_GetObjectItem(profile, "conditions"));
-    if (conditions) {
-        if (strcmp(conditions, "dawn_dusk") == 0 && !SunEvents_Between_Dawn_Dusk())
-			return;
-		if (strcmp(conditions, "sunrise_sunset") == 0 && !SunEvents_Between_Sunrise_Sunset())
-			return;
-    }
+	char* json = cJSON_PrintUnformatted(profile);
+	if (json) {
+		LOG_TRACE("%s: %s\n", __func__, json);
+		free(json);
+	}
 
-    // All conditions met or no conditions, capture the recording
-    Recordings_Capture(profile);
+	// Check if profile has conditions
+	const char* conditions = cJSON_GetStringValue(cJSON_GetObjectItem(profile, "conditions"));
+	LOG_TRACE("%s: D2D= %d S2S= %d Conditions= %s\n", 
+              __func__, SunEvents_Between_Dawn_Dusk(), SunEvents_Between_Sunrise_Sunset(), conditions ? conditions : "None");
+
+	if (conditions) {
+		if (strcmp(conditions, "dawn_dusk") == 0 && SunEvents_Between_Dawn_Dusk() == 0 ) {
+			LOG_TRACE("%s: Condition 'dawn_dusk' not met\n", __func__);
+			return;
+		}
+		if (strcmp(conditions, "sunrise-sunset") == 0 && SunEvents_Between_Sunrise_Sunset() == 0 ) {
+			LOG_TRACE("%s: Condition 'sunrise_sunset' not met\n", __func__);
+			return;
+		}
+	}
+
+	// All conditions met or no conditions, capture the recording
+	LOG_TRACE("%s: All conditions met, capturing recording\n", __func__);
+	Recordings_Capture(profile);
 }
 
 

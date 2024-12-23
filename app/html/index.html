@@ -12,7 +12,7 @@
 <body>
 <div class="d-flex" id="wrapper">
     <div class="bg-light border-right" id="sidebar-wrapper">
-        <div class="sidebar-heading">&nbsp;Timelapse&nbsp;</div>
+        <div class="sidebar-heading"></div>
         <div class="list-group list-group-flush">
             <a href="index.html" class="list-group-item list-group-item-action active">Active Captures</a>
             <a href="timelapse.html" class="list-group-item list-group-item-action">Settings</a>
@@ -90,6 +90,22 @@
 			</div>
 		</div>
 	</div>
+	<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title" id="errorModalLabel">Error</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					The application is not running.
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>				
 </div>
 
 <script>
@@ -109,8 +125,11 @@ $(document).ready(function() {
         cache: false,
         success: function(app) {
             document.title = app.manifest.acapPackageConf.setup.friendlyName;
-            $('.acap_name').text(app.manifest.acapPackageConf.setup.friendlyName);
-        }
+            $('.sidebar-heading').text(app.manifest.acapPackageConf.setup.friendlyName);
+		},
+		error: function(response) {
+			$('#errorModal').modal('show');
+		}
     });
 
     function formatDate(timestamp) {
