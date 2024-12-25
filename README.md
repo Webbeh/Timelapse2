@@ -9,6 +9,8 @@ Create timelapse videos with an Axis Camera. Typical use cases include:
 
 [Download ACAP (zip)](https://www.dropbox.com/scl/fi/uik3zu8potr7rv7u2djyb/Timelapse2.zip?rlkey=ovo9g8sb6qwmbyzptkn6c9674&dl=1)
 
+# <span style="color:red">Still In Beta. Serious bugs exist</span>
+
 ---
 If you find this ACAP valuable, please consider [buying me a coffee](https://buymeacoffee.com/fredjuhlinl).  
 
@@ -53,6 +55,11 @@ A table of all active recordings.
 
   
 Add and edit timelapse profiles.
+- Set a descriptive name
+- Set Trigger type (Event or Timer)
+- Set resolution
+- Text overlay.  If text overaly is configured in the camera e.g. Date & Time, select if this shall be included in the timelapse.
+- Conditions:  Setting this will supress images capture during night.  Select sunrise-sunset or dawn-dusk.
 
 ### Actions
 
