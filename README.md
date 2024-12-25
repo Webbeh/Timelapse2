@@ -85,7 +85,3 @@ List and fetch closed recordings.
 
 ### 1.0.0 - December 25, 2024
 - Initial release
-
----
-
-This revised version improves grammar, clarity, and formatting while maintaining your original intent and structure. Let me know if further refinements are needed!
