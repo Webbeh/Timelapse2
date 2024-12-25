@@ -12,7 +12,7 @@ Create timelapse videos with an Axis Camera. Typical use cases include:
 ---
 If you find this ACAP valuable, please consider [buying me a coffee](https://buymeacoffee.com/fredjuhlinl).  
 
-Please report bugs and other issues on [the repository] (https://github.com/pandosme/Timelapse2/issues)
+Please report bugs and other issues [here](https://github.com/pandosme/Timelapse2/issues)
 
 ---
 ## Overview
