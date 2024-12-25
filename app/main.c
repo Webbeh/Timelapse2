@@ -68,6 +68,60 @@ void Settings_Updated_Callback(const char* service, cJSON* data) {
 	}
 }
 
+static void
+HTTP_Endpoint_Reset(const ACAP_HTTP_Response response, 
+                              const ACAP_HTTP_Request request) {
+    const char* base_path = "/var/spool/storage/SD_DISK/timelapse2";
+    DIR* dir = opendir(base_path);
+    if (!dir) {
+        LOG_WARN("%s: Cannot open directory %s\n", __func__, base_path);
+        ACAP_HTTP_Respond_Text(response, "OK");
+    }
+
+	LOG("Resetting everything\n");
+
+    struct dirent* entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || 
+            strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        char path[256];
+        snprintf(path, sizeof(path), "%s/%s", base_path, entry->d_name);
+
+        struct stat st;
+        if (stat(path, &st) == 0) {
+            if (S_ISDIR(st.st_mode)) {
+                // Delete directory contents first
+                DIR* subdir = opendir(path);
+                if (subdir) {
+                    struct dirent* subentry;
+                    while ((subentry = readdir(subdir))) {
+                        if (strcmp(subentry->d_name, ".") == 0 || 
+                            strcmp(subentry->d_name, "..") == 0)
+                            continue;
+
+                        char subpath[256];
+                        snprintf(subpath, sizeof(subpath), "%s/%s", 
+                                path, subentry->d_name);
+                        unlink(subpath);
+                    }
+                    closedir(subdir);
+                }
+                rmdir(path);
+            } else {
+                unlink(path);
+            }
+        }
+    }
+    closedir(dir);
+
+	Timelapse_Reset();
+	Recordings_Reset();
+	LOG("Everythin reset\n");
+    ACAP_HTTP_Respond_Text(response, "OK");
+}
+
 static GMainLoop *main_loop = NULL;
 
 static gboolean
@@ -103,6 +157,9 @@ int main(void) {
     Timelapse_Init(Trigger);
 	Recordings_Init();
     SunEvents_Init();
+
+	//Last resort for a corrupt file system on SD Card
+    ACAP_HTTP_Node("reset", HTTP_Endpoint_Reset);
 	
     // Create and run the main loop
 	main_loop = g_main_loop_new(NULL, FALSE);

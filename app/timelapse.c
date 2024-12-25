@@ -543,6 +543,26 @@ static void HTTP_Endpoint_Timelpase(const ACAP_HTTP_Response response, const ACA
     ACAP_HTTP_Respond_Error(response, 405, "Method Not Allowed");
 }
 
+void Timelapse_Reset() {
+	Timelapse_Load_Profiles();
+	
+    if (!timelapse_timers) return;
+
+    GHashTableIter iter;
+    gpointer key, value;
+    
+    g_hash_table_iter_init(&iter, timelapse_timers);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        TimelapseTimer* timer = (TimelapseTimer*)value;
+        if (timer && timer->timer_source) {
+            g_source_destroy(timer->timer_source);
+            g_source_unref(timer->timer_source);
+        }
+    }
+    g_hash_table_destroy(timelapse_timers);
+    timelapse_timers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+}
+
 int
 Timelapse_Init(Timelapse_Callback callback) {
     Timelapse_ServiceCallBack = callback;

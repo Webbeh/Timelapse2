@@ -14,7 +14,7 @@
     <div class="bg-light border-right" id="sidebar-wrapper">
         <div class="sidebar-heading"></div>
         <div class="list-group list-group-flush">
-            <a href="index.html" class="list-group-item list-group-item-action active">Active Captures</a>
+            <a href="index.html" class="list-group-item list-group-item-action active">Recordings</a>
             <a href="timelapse.html" class="list-group-item list-group-item-action">Settings</a>
             <a href="sunevents.html" class="list-group-item list-group-item-action">Location</a>
             <a href="archive.html" class="list-group-item list-group-item-action">Archive</a>
@@ -31,8 +31,9 @@
                             <th>Profile Name</th>
                             <th>Images</th>
 							<th>Size</th>
-                            <th>First Capture</th>
                             <th>Last Capture</th>
+                            <th>First Capture</th>
+                            <th>Last Archived</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -134,35 +135,37 @@ $(document).ready(function() {
 
     function formatDate(timestamp) {
         if (!timestamp) return 'N/A';
-        return new Date(timestamp).toLocaleString();
+        return new Date(timestamp).toLocaleDateString();
     }
 
     // Fetch both profiles and recordings
-    Promise.all([
-        $.ajax({ url: 'timelapse', type: 'GET' }),
-        $.ajax({ url: 'recordings', type: 'GET' })
-    ]).then(function([profiles, recordings]) {
-		TimelapseRecordings	= recordings;
-        const tbody = $('#recordings-list');
-        tbody.empty();
-		
-        Object.entries(recordings).forEach(([id, recording]) => {
-            const profile = profiles.find(p => p.id === id) || { name: 'Unknown Profile' };
-            var tr = '<tr>';
-            tr += '<td>' + profile.name + '</td>';
-            tr += '<td>' + recording.images + '</td>';
+	Promise.all([
+		$.ajax({ url: 'timelapse', type: 'GET' }),
+		$.ajax({ url: 'recordings', type: 'GET' })
+	]).then(function([profiles, recordings]) {
+		TimelapseRecordings = recordings;
+		const tbody = $('#recordings-list');
+		tbody.empty();
+
+		Object.entries(recordings).forEach(([id, recording]) => {
+			const profile = profiles.find(p => p.id === id) || { name: 'Unknown Profile' };
+			var tr = '<tr>';
+			tr += '<td>' + profile.name + '</td>';
+			tr += '<td>' + recording.images + '</td>';
 			tr += '<td>' + formatFileSize(recording.size) + '</td>';
-            tr += '<td>' + formatDate(recording.first) + '</td>';
-            tr += '<td>' + formatDate(recording.last) + '</td>';
-            tr += '<td>';
-            tr += '<button class="btn btn-sm btn-primary me-1" onclick="inspectRecording(\'' + id + '\')">Inspect</button>';
-            tr += '<button class="btn btn-sm btn-success me-1" onclick="exportRecording(\'' + id + '\')">Export</button>';
-            tr += '<button class="btn btn-sm btn-danger" onclick="flushRecording(\'' + id + '\')">Delete</button>';
-            tr += '</td>';
-            tr += '</tr>';
-            tbody.append(tr);
-        });
-    });
+			tr += '<td>' + formatDate(recording.last) + '</td>';
+			tr += '<td>' + formatDate(recording.first) + '</td>';
+			tr += '<td>' + formatDate(recording.archived) + '</td>';
+			tr += '<td>';
+			tr += '<button class="btn btn-sm btn-primary me-1" onclick="exportRecording(\'' + id + '\')">Download</button>';
+			tr += '<button class="btn btn-sm btn-success me-1" onclick="inspectRecording(\'' + id + '\')">Inspect</button>';
+			tr += '<button class="btn btn-sm btn-warning me-1" onclick="archiveRecording(\'' + id + '\')">Archive</button>'; // New Archive button
+			tr += '<button class="btn btn-sm btn-danger" onclick="flushRecording(\'' + id + '\')">Delete</button>';
+			tr += '</td>';
+			tr += '</tr>';
+			tbody.append(tr);
+		});
+	});
 
     function loadImage(index) {
         $('#inspectImage').attr('src', 'image?id=' + currentProfileId + '&index=' + index);
@@ -246,6 +249,25 @@ $(document).ready(function() {
             }
         });
     };
+
+	window.archiveRecording = function(profileId) {
+		if (!confirm('Are you sure you want to archive this recording?')) {
+			return;
+		}
+
+		$.ajax({
+			type: 'PUT',
+			url: `archive?id=${encodeURIComponent(profileId)}`,
+			success: function() {
+				alert('Recording archived successfully');
+				location.reload(); // Reload the page to update the recordings list
+			},
+			error: function() {
+				alert('Failed to archive recording');
+			}
+		});
+	}
+
 
     $('#prevButton').click(function() {
         if (currentImageIndex > 1) {
