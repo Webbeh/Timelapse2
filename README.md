@@ -19,8 +19,7 @@ Please report bugs and other issues [here](https://github.com/pandosme/Timelapse
 
 - **AXIS OS12 compliant**  
   Requires Firmware 11.11.x or greater.  If the firmware is less than 11.11.x, use TimelapseMe.
-- Replaces [TimelapseMe](https://pandosme.github.io/acap/2020/01/01/timelapse.html). Note: Migration from TimelapseMe to Timelapse 2 is not possible as they are two different ACAP applications.
-- [Open-source project]()
+- Migration from TimelapseMe to Timelapse 2 is not possible as they are two different applications.
 
 ---
 
