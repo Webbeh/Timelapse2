@@ -57,15 +57,6 @@ void Settings_Updated_Callback(const char* service, cJSON* data) {
     char* json = cJSON_PrintUnformatted(data);
     LOG_TRACE("%s: Service=%s Data=%s\n", __func__, service, json);
     free(json);
-	if( strcmp("settings",service) == 0 ) {
-		cJSON* geolocation = cJSON_GetObjectItem(data,"geolocation");
-		if( geolocation ) {
-			ACAP_STATUS_SetBool("settings","geolocation",1);
-			SunEvents_Set(geolocation);
-		} else {
-			LOG_WARN("%s: No geolocation in settingsn",__func__);
-		}
-	}
 }
 
 static void

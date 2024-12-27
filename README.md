@@ -93,4 +93,7 @@ List and fetch closed recordings.
 ### 1.0.0 - December 25, 2024
 - Initial release
 
+### 1.0.1 - December 26, 2024
+- Bug fixes
+
 ---

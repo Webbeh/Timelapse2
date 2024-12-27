@@ -155,7 +155,7 @@ $(document).ready(function() {
 			tr += '<td>' + formatFileSize(recording.size) + '</td>';
 			tr += '<td>' + formatDate(recording.last) + '</td>';
 			tr += '<td>' + formatDate(recording.first) + '</td>';
-			tr += '<td>' + formatDate(recording.archived) + '</td>';
+			tr += '<td>' + formatDate(profile.archived) + '</td>';
 			tr += '<td>';
 			tr += '<button class="btn btn-sm btn-primary me-1" onclick="exportRecording(\'' + id + '\')">Download</button>';
 			tr += '<button class="btn btn-sm btn-success me-1" onclick="inspectRecording(\'' + id + '\')">Inspect</button>';
@@ -239,8 +239,6 @@ $(document).ready(function() {
 	});
 
     window.flushRecording = function(id) {
-        if (!confirm('Are you sure you want to flush this recording?')) return;
-        
         $.ajax({
             type: 'DELETE',
             url: 'recordings?id=' + id,
@@ -251,10 +249,6 @@ $(document).ready(function() {
     };
 
 	window.archiveRecording = function(profileId) {
-		if (!confirm('Are you sure you want to archive this recording?')) {
-			return;
-		}
-
 		$.ajax({
 			type: 'PUT',
 			url: `archive?id=${encodeURIComponent(profileId)}`,

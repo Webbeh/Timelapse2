@@ -41,6 +41,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Resolution</th>
+                        <th>Playback FPS</th>
                         <th>Trigger Event</th>
                         <th>Conditions</th>
                         <th>Actions</th>
@@ -104,6 +105,11 @@
 									</div>
 
 									<div class="mb-3">
+										<label class="form-label fw-bold">Playback FPS</label>
+										<input type="number" id="fps" class="form-control form-control-lg" step="5" required>
+									</div>
+
+									<div class="mb-3">
 										<label class="form-label fw-bold">Text Overlay</label>
 										<select class="form-select form-select-lg" id="overlay">
 											<option value="true">Include</option>
@@ -121,6 +127,7 @@
 									</div>
 
 									<input type="hidden" id="edit-id">
+									<input type="hidden" id="archived">
 
 									<div class="modal-footer border-0 px-0 pb-0">
 										<button type="button" class="btn btn-lg btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -237,6 +244,8 @@ $(document).ready(function() {
 			name: $('#name').val(),
 			resolution: $('#resolution').val(),
 			conditions: $('#conditions').val(),
+			fps: parseInt($('#fps').val()),
+			archived: parseInt($('#archived').val()),
 			overlay: $('#overlay').val() === 'true'
 		};
 
@@ -305,10 +314,6 @@ function generateID() {
 }
 
 function deleteTimelapse(id) {
-    if (!confirm('Are you sure?')) {
-        return;
-    }
-
     fetch('timelapse?id=' + encodeURIComponent(id), {
         method: 'DELETE'
     })
@@ -334,11 +339,13 @@ function editTimelapse(profileId) {
         console.error('Profile not found:', profileId);
         return;
     }
-    
+    let fps = profile.fps || 10;
     // Set basic form values
     $('#edit-id').val(profile.id);
     $('#name').val(profile.name);
     $('#resolution').val(profile.resolution);
+    $('#fps').val(fps);	
+    $('#archived').val(profile.archived);
     $('#conditions').val(profile.conditions || 'any');
     $('#overlay').val(profile.overlay ? 'true' : 'false');
     
@@ -375,11 +382,13 @@ function updateTimelapseTable() {
     tbody.empty();
     
     timelapseList.forEach(timelapse => {
+		let fps = timelapse.fps || 10;
 		let eventTrigger = timelapse.triggerEvent ? timelapse.triggerEvent.name :formatTimer(timelapse.timer);
 		let eventConditions = timelapse.conditions || 'No conditions';
         let tr = '<tr>';
 		tr += '<td>' + timelapse.name + '</td>';
 		tr += '<td>' + timelapse.resolution + '</td>';
+		tr += '<td>' + fps + '</td>';
 		tr += '<td>' + eventTrigger  + '</td>';
 		tr += '<td>' + eventConditions + '</td>';
 		tr += '<td>';

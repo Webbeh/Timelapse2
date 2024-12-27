@@ -16,7 +16,7 @@
 
 #define LOG(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...)    { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_TRACE(fmt, args...)    {}
 
 #define PATH_MAX_LEN 1024
@@ -530,14 +530,8 @@ int Recordings_Clear(const char* profileId) {
     if (!Recordings_Container) {
         load_recordings();
     }
-    cJSON* recording = cJSON_GetObjectItem(Recordings_Container, profileId);
-    if (recording) {
-        cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "size"), 0);
-        cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "images"), 0);
-        cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "first"), 0);
-        cJSON_SetNumberValue(cJSON_GetObjectItem(recording, "last"), 0);
-        save_recordings();
-    }
+	cJSON_DeleteItemFromObject(Recordings_Container, profileId);	
+    save_recordings();
     return 0;
 }
 
@@ -627,11 +621,11 @@ int Recordings_Capture(cJSON* profile) {
     }
 
     unsigned int frames = 0;
-    unsigned int fps = 10;
+    unsigned int fps = cJSON_GetObjectItem(profile,"fps")?cJSON_GetObjectItem(profile,"fps")->valueint:10;
     DWORD totalJPEGSize = 0;
 
     cJSON* recording = cJSON_GetObjectItem(Recordings_Container, profileId);
-
+	
     if (!recording) {
         recording = cJSON_CreateObject();
         cJSON_AddItemToObject(Recordings_Container, profileId, recording);
@@ -640,10 +634,9 @@ int Recordings_Capture(cJSON* profile) {
         cJSON_AddNumberToObject(recording, "first", timestamp);
         cJSON_AddNumberToObject(recording, "last", 0);
         cJSON_AddNumberToObject(recording, "archived", 0);
-        cJSON_AddNumberToObject(recording, "fps", 10);
+        cJSON_AddNumberToObject(recording, "fps", fps);
     } else {
         frames = cJSON_GetObjectItem(recording, "images")->valueint;
-        fps = cJSON_GetObjectItem(recording, "fps")?cJSON_GetObjectItem(recording, "fps")->valueint:10;
         totalJPEGSize = cJSON_GetObjectItem(recording, "size")->valueint;
     }
 
@@ -736,12 +729,14 @@ int Recordings_Archive(const char *profileID) {
     struct tm *timeinfo = localtime(&now);
 
     char archiveFilename[PATH_MAX_LEN];
-    snprintf(archiveFilename, sizeof(archiveFilename), "%s/%s_%04d_%02d_%02d.avi",
-             archivePath,
-             sanitizedProfileName,
-             timeinfo->tm_year + 1900,
-             timeinfo->tm_mon + 1,
-             timeinfo->tm_mday);
+	snprintf(archiveFilename, sizeof(archiveFilename), "%s/%s_%04d_%02d_%02d_%02d%02d.avi",
+			 archivePath,
+			 sanitizedProfileName,
+			 timeinfo->tm_year + 1900,
+			 timeinfo->tm_mon + 1,
+			 timeinfo->tm_mday,
+			 timeinfo->tm_hour,
+			 timeinfo->tm_min);
 
     // Append index file to AVI file
     char aviFile[PATH_MAX_LEN];
@@ -777,17 +772,16 @@ int Recordings_Archive(const char *profileID) {
     cJSON_AddNumberToObject(recordingInfo, "fps", cJSON_GetObjectItem(recordingMetadata, "fps")->valueint);
     cJSON_AddNumberToObject(recordingInfo, "first", cJSON_GetObjectItem(recordingMetadata, "first")->valuedouble);
     cJSON_AddNumberToObject(recordingInfo, "last", cJSON_GetObjectItem(recordingMetadata, "last")->valuedouble);
-    cJSON_AddNumberToObject(recordingInfo, "archive", ACAP_DEVICE_Timestamp());
 	
     // Add the new recording to ArchiveList
     cJSON_AddItemToArray(ArchiveList, recordingInfo);
     save_archive_list();
 
     // Add last archived timestamp;
-	if(!cJSON_GetObjectItem(recordingMetadata, "archived"))
-		cJSON_AddNumberToObject(recordingMetadata,"archived", ACAP_DEVICE_Timestamp());
+	if(!cJSON_GetObjectItem(profile, "archived"))
+		cJSON_AddNumberToObject(profile,"archived", ACAP_DEVICE_Timestamp());
 	else
-		cJSON_SetNumberValue(cJSON_GetObjectItem(recordingMetadata, "archived"), ACAP_DEVICE_Timestamp());
+		cJSON_SetNumberValue(cJSON_GetObjectItem(profile, "archived"), ACAP_DEVICE_Timestamp());
 	save_recordings();
 
     // Clear the original directory

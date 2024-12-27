@@ -432,6 +432,11 @@ static void HTTP_Endpoint_Timelpase(const ACAP_HTTP_Response response, const ACA
 			return;
 		}
 			
+		if( !cJSON_GetObjectItem(profile,"fps" ) )
+			cJSON_AddNumberToObject( profile,"fps", 10 );
+		if( !cJSON_GetObjectItem(profile,"archived" ) )
+			cJSON_AddNumberToObject( profile,"archived", 10 );
+		
         // Add the new profile to the list
         if (!Timelapse_Activate_Profile(profile)) {
             cJSON_Delete(profile);
@@ -479,12 +484,18 @@ static void HTTP_Endpoint_Timelpase(const ACAP_HTTP_Response response, const ACA
 			return;
 		}
 
+		if( !cJSON_GetObjectItem(profile,"fps" ) )
+			cJSON_AddNumberToObject( profile,"fps", 10 );
+		if( !cJSON_GetObjectItem(profile,"archived" ) )
+			cJSON_AddNumberToObject( profile,"archived", 10 );
+
         // Update the profile
         if (!Timelapse_Activate_Profile(profile)) {
             cJSON_Delete(profile);
             ACAP_HTTP_Respond_Error(response, 500, "Failed to update timelapse profile");
             return;
         }
+		
 		Ensure_Directory_Exists(id);
 		Timelapse_Save_Profiles();
         ACAP_HTTP_Respond_Text(response, "Timelapse updated successfully");
