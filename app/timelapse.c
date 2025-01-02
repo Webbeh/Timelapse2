@@ -11,8 +11,8 @@
 
 #define LOG(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...)    { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...)    {}
+#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+//#define LOG_TRACE(fmt, args...)    {}
 
 #define TIMELAPSE_PATH "/var/spool/storage/SD_DISK/timelapse2/timelapse.json"
 
@@ -81,10 +81,20 @@ Setup_Timer(cJSON* profile) {
 
 void
 Timelapse_Event_Callback(cJSON *event, void* jsonProfile) {
+
 	//Only capture on triggers and stateful true
-	cJSON* state = cJSON_GetObjectItem(event,"state");
-	if( state && state->type == cJSON_False )
-		return;
+	cJSON* props = event->child;
+	while(props) {
+		if( props->type == cJSON_False )
+			return;
+		props = props->next;
+	}
+
+	char *json = cJSON_PrintUnformatted(event);
+	if( json ) {
+		LOG_TRACE("%s: %s",__func__,json);
+		free(json);
+	}
 
 	if(Timelapse_ServiceCallBack)
 		Timelapse_ServiceCallBack((cJSON*)jsonProfile);

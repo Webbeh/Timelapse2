@@ -98,5 +98,7 @@ List and fetch closed recordings.
 
 ### 1.0.2 - December 2, 2025
 - Fixed a bug that after archiving a recording, the new recording was not playable.
+- Fixed sun noon event
+- Fixed that captures only trigger on transition to active on stateful events 
 
 ---

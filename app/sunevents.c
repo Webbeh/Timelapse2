@@ -44,33 +44,37 @@ static gboolean Timer_Callback(gpointer user_data) {
     return G_SOURCE_CONTINUE;
 }
 
-// Setup a timer for solar noon
 static void Setup_SunNoon_Timer(time_t noon) {
     time_t now;
     time(&now);
 
-    struct tm* tm_now = localtime(&now);
-    struct tm* tm_noon = localtime(&noon);
-
-    if (last_scheduled_noon == noon || 
-        (tm_now->tm_yday == tm_noon->tm_yday && tm_now->tm_year == tm_noon->tm_year)) {
-        LOG_TRACE("%s: Sun noon already scheduled for today\n", __func__);
-        return;
-    }
-
-    last_scheduled_noon = noon;
-
     int seconds_to_noon = (int)(noon - now);
     if (seconds_to_noon < 0) {
-        seconds_to_noon += 24 * 3600; // Add 24 hours if noon already passed
+        seconds_to_noon += 24 * 3600;
     }
 
-    LOG_TRACE("%s: Setting up sun noon timer for %d seconds\n", __func__, seconds_to_noon);
+	LOG_TRACE("%s: Input %d\n",__func__,seconds_to_noon);
+
+    struct tm* tm_now = localtime(&now);
+    struct tm* tm_noon = localtime(&noon);
+    
+    // Modified condition to allow first setup of the day
+    if (last_scheduled_noon != 0 && 
+        (last_scheduled_noon == noon || 
+        (tm_now->tm_yday == tm_noon->tm_yday && 
+         tm_now->tm_year == tm_noon->tm_year))) {
+        return;
+    }
+    
+    last_scheduled_noon = noon;
 
     if (sunnoon_timer) {
         g_source_destroy(sunnoon_timer);
         g_source_unref(sunnoon_timer);
     }
+
+	LOG_TRACE("%s: Timer to sun noon %d\n",__func__,seconds_to_noon);
+
 
     sunnoon_timer = g_timeout_source_new_seconds(seconds_to_noon);
     g_source_set_callback(sunnoon_timer, SunNoon_Timer_Callback, NULL, NULL);
