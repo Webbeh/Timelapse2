@@ -24,7 +24,7 @@
 //#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_TRACE(fmt, args...)    {}
 
-void Trigger(cJSON* profile) {
+void MAIN_Timelapse_Trigger(cJSON* profile) {
 	char* json = cJSON_PrintUnformatted(profile);
 	if (json) {
 		LOG_TRACE("%s: %s\n", __func__, json);
@@ -145,7 +145,7 @@ int main(void) {
 
     // Initialize ACAP and Timelapse
     ACAP(APP_PACKAGE, Settings_Updated_Callback);
-    Timelapse_Init(Trigger);
+    Timelapse_Init(MAIN_Timelapse_Trigger);
 	Recordings_Init();
     SunEvents_Init();
 

@@ -106,7 +106,7 @@
 
 									<div class="mb-3">
 										<label class="form-label fw-bold">Playback FPS</label>
-										<input type="number" id="fps" class="form-control form-control-lg" step="5" required>
+									    <input type="number" id="fps" class="form-control form-control-lg" step="5" value="10" required>
 									</div>
 
 									<div class="mb-3">
@@ -301,6 +301,14 @@ $(document).ready(function() {
             console.error('Failed to fetch timelapse configurations:', error);
         }
     });
+	$('#timelapseModal').on('hidden.bs.modal', function() {
+		$('#timelapse-form')[0].reset();
+		$('#edit-id').val('');
+		$('#fps').val(10);  // Set default FPS
+		if (eventSelect) {
+			eventSelect.clear();
+		}
+	});
 });
 
 
