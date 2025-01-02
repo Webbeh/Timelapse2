@@ -96,7 +96,7 @@ List and fetch closed recordings.
 ### 1.0.1 - December 26, 2024
 - Bug fixes
 
-### 1.0.2 - December 26, 2024
+### 1.0.2 - December 2, 2025
 - Fixed a bug that after archiving a recording, the new recording was not playable.
 
 ---
