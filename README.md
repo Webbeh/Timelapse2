@@ -101,4 +101,7 @@ List and fetch closed recordings.
 - Fixed sun noon event
 - Fixed that captures only trigger on transition to active on stateful events 
 
+### 1.0.3 - December 5, 2025
+- Fixed a bug for sunnoon event trigger
+
 ---

@@ -14,7 +14,7 @@
 //#define LOG_TRACE(fmt, args...) {}
 
 static cJSON* SunEventsSettings = NULL;
-static GSource* timer_source = NULL;
+static GSource* midnight_timer = NULL;
 static GSource* sunnoon_timer = NULL;
 static time_t last_scheduled_noon = 0;
 
@@ -32,83 +32,69 @@ static double to_deg(double rad) {
 static gboolean SunNoon_Timer_Callback(gpointer user_data) {
     LOG_TRACE("%s: Sun noon event triggered\n", __func__);
     ACAP_EVENTS_Fire("sunnoon");
-    return G_SOURCE_CONTINUE;
+    return G_SOURCE_REMOVE;  // Return NULL instead of continuing
 }
 
-// Timer callback for midnight recalculation
-static gboolean Timer_Callback(gpointer user_data) {
-    LOG_TRACE("%s: Midnight timer triggered\n", __func__);
-    double lat = cJSON_GetObjectItem(SunEventsSettings, "lat")->valuedouble;
-    double lon = cJSON_GetObjectItem(SunEventsSettings, "lon")->valuedouble;
-    Calculate_Sun_Events(lat, lon);
-    return G_SOURCE_CONTINUE;
-}
 
 static void Setup_SunNoon_Timer(time_t noon) {
     time_t now;
     time(&now);
-
     int seconds_to_noon = (int)(noon - now);
+    
     if (seconds_to_noon < 0) {
         seconds_to_noon += 24 * 3600;
     }
-
-	LOG_TRACE("%s: Input %d\n",__func__,seconds_to_noon);
-
-    struct tm* tm_now = localtime(&now);
-    struct tm* tm_noon = localtime(&noon);
     
-    // Modified condition to allow first setup of the day
-    if (last_scheduled_noon != 0 && 
-        (last_scheduled_noon == noon || 
-        (tm_now->tm_yday == tm_noon->tm_yday && 
-         tm_now->tm_year == tm_noon->tm_year))) {
-        return;
-    }
+    LOG_TRACE("%s: Input %d\n", __func__, seconds_to_noon);
     
-    last_scheduled_noon = noon;
-
+    // Always clean up existing timer
     if (sunnoon_timer) {
         g_source_destroy(sunnoon_timer);
         g_source_unref(sunnoon_timer);
+        sunnoon_timer = NULL;
     }
-
-	LOG_TRACE("%s: Timer to sun noon %d\n",__func__,seconds_to_noon);
-
-
+    
+    LOG_TRACE("%s: Timer to sun noon %d\n", __func__, seconds_to_noon);
     sunnoon_timer = g_timeout_source_new_seconds(seconds_to_noon);
     g_source_set_callback(sunnoon_timer, SunNoon_Timer_Callback, NULL, NULL);
     g_source_attach(sunnoon_timer, NULL);
 }
 
 // Setup timer for next midnight
+static gboolean Midnight_Timer_Callback(gpointer user_data) {
+    LOG_TRACE("%s: Midnight timer triggered\n", __func__);
+    double lat = cJSON_GetObjectItem(SunEventsSettings, "lat")->valuedouble;
+    double lon = cJSON_GetObjectItem(SunEventsSettings, "lon")->valuedouble;
+    Calculate_Sun_Events(lat, lon);
+    return G_SOURCE_REMOVE;  // Return NULL instead of continuing
+}
+
 static void Setup_Midnight_Timer() {
     if (!SunEventsSettings) return;
-
+    
     time_t now;
     time(&now);
-
     struct tm* local = localtime(&now);
     int seconds_to_midnight = ((23 - local->tm_hour) * 3600) + 
-                              ((59 - local->tm_min) * 60) + 
-                              (60 - local->tm_sec);
-
-    LOG_TRACE("%s: Setting up timer for %d seconds\n", __func__, seconds_to_midnight);
-
-    if (timer_source) {
-        g_source_destroy(timer_source);
-        g_source_unref(timer_source);
-    }
-
-    timer_source = g_timeout_source_new_seconds(seconds_to_midnight);
+                            ((59 - local->tm_min) * 60) + 
+                            (60 - local->tm_sec);
     
-    if (!timer_source) {
+    LOG_TRACE("%s: Setting up timer for %d seconds\n", __func__, seconds_to_midnight);
+    
+    if (midnight_timer) {
+        g_source_destroy(midnight_timer);
+        g_source_unref(midnight_timer);
+        midnight_timer = NULL;
+    }
+    
+    midnight_timer = g_timeout_source_new_seconds(seconds_to_midnight);
+    if (!midnight_timer) {
         LOG_WARN("%s: Failed to create timer source\n", __func__);
         return;
     }
-
-    g_source_set_callback(timer_source, Timer_Callback, NULL, NULL);
-    g_source_attach(timer_source, NULL);
+    
+    g_source_set_callback(midnight_timer, Midnight_Timer_Callback, NULL, NULL);
+    g_source_attach(midnight_timer, NULL);
 }
 
 int SunEvents_Set(cJSON* location) {
