@@ -16,7 +16,7 @@
 
 #define LOG(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...)    { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+//#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_TRACE(fmt, args...)    {}
 
 #define PATH_MAX_LEN 1024
@@ -151,7 +151,7 @@ static void replace_spaces_with_underscores(char *str);
 static void load_archive_list();
 static void save_archive_list();
 static void update_avi_fps(FILE* f, unsigned int fps);
-
+int Recordings_Delete_Archive(const char* filename);
 static void write_avi_header(FILE* f, DWORD frames, DWORD totalJPEGSize, DWORD width, DWORD height, unsigned int fps) {
     AVI_HEADER header;
     DWORD riffsize;

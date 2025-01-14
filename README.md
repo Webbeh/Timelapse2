@@ -90,18 +90,24 @@ List and fetch closed recordings.
 
 # History
 
-### 1.0.0 - December 25, 2024
-- Initial release
+### 1.0.4 - December 14, 2025
+- Fixed sun recalculation.
 
-### 1.0.1 - December 26, 2024
-- Bug fixes
+### 1.0.3 - December 5, 2025
+- Fixed a bug for sunnoon event trigger
 
 ### 1.0.2 - December 2, 2025
 - Fixed a bug that after archiving a recording, the new recording was not playable.
 - Fixed sun noon event
 - Fixed that captures only trigger on transition to active on stateful events 
 
-### 1.0.3 - December 5, 2025
-- Fixed a bug for sunnoon event trigger
+### 1.0.1 - December 26, 2024
+- Bug fixes
+
+### 1.0.0 - December 25, 2024
+- Initial release
+
+
+
 
 ---

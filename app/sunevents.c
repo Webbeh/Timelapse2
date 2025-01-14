@@ -10,8 +10,8 @@
 
 #define LOG(fmt, args...) { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_WARN(fmt, args...) { syslog(LOG_WARNING, fmt, ## args); printf(fmt, ## args); }
-#define LOG_TRACE(fmt, args...) { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
-//#define LOG_TRACE(fmt, args...) {}
+//#define LOG_TRACE(fmt, args...) { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
+#define LOG_TRACE(fmt, args...) {}
 
 static cJSON* SunEventsSettings = NULL;
 static GSource* midnight_timer = NULL;
@@ -19,6 +19,7 @@ static GSource* sunnoon_timer = NULL;
 static time_t last_scheduled_noon = 0;
 
 static void Calculate_Sun_Events(double lat, double lon);
+static void Setup_Midnight_Timer();
 
 static double to_rad(double deg) {
     return deg * M_PI / 180.0;
@@ -60,12 +61,15 @@ static void Setup_SunNoon_Timer(time_t noon) {
     g_source_attach(sunnoon_timer, NULL);
 }
 
+
+
 // Setup timer for next midnight
 static gboolean Midnight_Timer_Callback(gpointer user_data) {
     LOG_TRACE("%s: Midnight timer triggered\n", __func__);
     double lat = cJSON_GetObjectItem(SunEventsSettings, "lat")->valuedouble;
     double lon = cJSON_GetObjectItem(SunEventsSettings, "lon")->valuedouble;
     Calculate_Sun_Events(lat, lon);
+	Setup_Midnight_Timer();
     return G_SOURCE_REMOVE;  // Return NULL instead of continuing
 }
 
@@ -96,6 +100,7 @@ static void Setup_Midnight_Timer() {
     g_source_set_callback(midnight_timer, Midnight_Timer_Callback, NULL, NULL);
     g_source_attach(midnight_timer, NULL);
 }
+
 
 int SunEvents_Set(cJSON* location) {
     if (!location || !SunEventsSettings) return -1;
