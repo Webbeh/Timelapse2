@@ -7,7 +7,7 @@ Create timelapse videos with an Axis Camera. Typical use cases include:
 - Forensic search
 - Event trigger validation
 
-[Download ACAP (zip)](https://www.dropbox.com/scl/fi/uik3zu8potr7rv7u2djyb/Timelapse2.zip?rlkey=ovo9g8sb6qwmbyzptkn6c9674&dl=1)
+##[Download](https://www.dropbox.com/scl/fi/uik3zu8potr7rv7u2djyb/Timelapse2.zip?rlkey=ovo9g8sb6qwmbyzptkn6c9674&dl=1) pre-compiled ACAP for ARMv7-HF and AARC64
 
 ---
 If you find this ACAP valuable, please consider [buying me a coffee](https://buymeacoffee.com/fredjuhlinl).  
