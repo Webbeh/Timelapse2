@@ -21,6 +21,8 @@ Please report bugs and other issues [here](https://github.com/pandosme/Timelapse
 - **AXIS OS12 compliant**  
   Requires Firmware 11.11.x or greater.  If the firmware is less than 11.11.x, use TimelapseMe.
 - Migration from TimelapseMe to Timelapse 2 is not possible as they are two different applications.
+- ==Panoramic cameras are not sopported==
+- You need to enable "Allow unsigned ACAP"
 
 ---
 
