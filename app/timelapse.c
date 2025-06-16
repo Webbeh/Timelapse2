@@ -14,7 +14,7 @@
 //#define LOG_TRACE(fmt, args...)    { syslog(LOG_INFO, fmt, ## args); printf(fmt, ## args); }
 #define LOG_TRACE(fmt, args...)    {}
 
-#define TIMELAPSE_PATH "/var/spool/storage/SD_DISK/timelapse2/timelapse.json"
+#define TIMELAPSE_PATH "/var/spool/storage/NetworkShare/timelapse2/timelapse.json"
 
 static cJSON *TimelapseProfiles = NULL;
 static Timelapse_Callback Timelapse_ServiceCallBack = 0;
@@ -103,7 +103,7 @@ Timelapse_Event_Callback(cJSON *event, void* jsonProfile) {
 
 static int Ensure_Directory_Exists(const char* id) {
     char path[256];
-    snprintf(path, sizeof(path), "/var/spool/storage/SD_DISK/timelapse2/%s", id);
+    snprintf(path, sizeof(path), "/var/spool/storage/NetworkShare/timelapse2/%s", id);
     LOG_TRACE("%s: Checking directory %s\n", __func__, path);
     
     struct stat st = {0};

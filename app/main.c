@@ -62,7 +62,7 @@ void Settings_Updated_Callback(const char* service, cJSON* data) {
 static void
 HTTP_Endpoint_Reset(const ACAP_HTTP_Response response, 
                               const ACAP_HTTP_Request request) {
-    const char* base_path = "/var/spool/storage/SD_DISK/timelapse2";
+    const char* base_path = "/var/spool/storage/NetworkShare/timelapse2";
     DIR* dir = opendir(base_path);
     if (!dir) {
         LOG_WARN("%s: Cannot open directory %s\n", __func__, base_path);
@@ -131,7 +131,7 @@ int main(void) {
 
 
 	// Create timelapse directory if it doesn't exist
-	const char* timelapse_dir = "/var/spool/storage/SD_DISK/timelapse2";
+	const char* timelapse_dir = "/var/spool/storage/NetworkShare/timelapse2";
 	struct stat st = {0};
 	if (stat(timelapse_dir, &st) == -1) {
 		if (mkdir(timelapse_dir, 0755) == -1) {

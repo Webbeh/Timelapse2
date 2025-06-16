@@ -306,7 +306,7 @@ static size_t write_avi_frame(FILE* f, const unsigned char* data, size_t size) {
 static void ensure_profile_directory(const char* profileId) {
 
     char path[PATH_MAX_LEN];
-    sprintf(path, "/var/spool/storage/SD_DISK/timelapse2/%s", profileId);
+    sprintf(path, "/var/spool/storage/NetworkShare/timelapse2/%s", profileId);
     struct stat st = {0};
     if (stat(path, &st) == -1) {
         mkdir(path, 0755);
@@ -323,7 +323,7 @@ static void ensure_directory(const char *path) {
 
 static cJSON* load_recordings(void) {
     char path[PATH_MAX_LEN];
-    sprintf(path, "/var/spool/storage/SD_DISK/timelapse2/recordings.json");
+    sprintf(path, "/var/spool/storage/NetworkShare/timelapse2/recordings.json");
     
     FILE* file = fopen(path, "r");
     if (!file) {
@@ -352,7 +352,7 @@ static cJSON* load_recordings(void) {
 
 static void save_recordings(void) {
     char path[PATH_MAX_LEN];
-    sprintf(path, "/var/spool/storage/SD_DISK/timelapse2/recordings.json");
+    sprintf(path, "/var/spool/storage/NetworkShare/timelapse2/recordings.json");
     
     char* json = cJSON_PrintUnformatted(Recordings_Container);
     if (!json) return;
@@ -411,7 +411,7 @@ static void replace_spaces_with_underscores(char *str) {
 
 static void load_archive_list() {
     char path[PATH_MAX_LEN];
-    snprintf(path, sizeof(path), "/var/spool/storage/SD_DISK/timelapse2/archive/recordings.json");
+    snprintf(path, sizeof(path), "/var/spool/storage/NetworkShare/timelapse2/archive/recordings.json");
 
     FILE *file = fopen(path, "r");
     if (!file) {
@@ -445,7 +445,7 @@ static void load_archive_list() {
 // Function to save the archive list to recordings.json
 static void save_archive_list() {
     char path[PATH_MAX_LEN];
-    snprintf(path, sizeof(path), "/var/spool/storage/SD_DISK/timelapse2/archive/recordings.json");
+    snprintf(path, sizeof(path), "/var/spool/storage/NetworkShare/timelapse2/archive/recordings.json");
 
     char *jsonString = cJSON_PrintUnformatted(ArchiveList);
     if (!jsonString) {
@@ -513,7 +513,7 @@ int Recordings_Clear(const char* profileId) {
     }
 
     char path[PATH_MAX_LEN];
-    sprintf(path, "/var/spool/storage/SD_DISK/timelapse2/%s", profileId);
+    sprintf(path, "/var/spool/storage/NetworkShare/timelapse2/%s", profileId);
     
     // Remove all files in directory
     DIR* dir = opendir(path);
@@ -659,7 +659,7 @@ int Recordings_Capture(cJSON* profile) {
 
     // Open or create AVI file
     char filepath[PATH_MAX_LEN];
-    sprintf(filepath, "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.avi", profileId);
+    sprintf(filepath, "/var/spool/storage/NetworkShare/timelapse2/%s/timelapse.avi", profileId);
     FILE* aviFile = fopen(filepath, "rb+");
     if (!aviFile) {
         aviFile = fopen(filepath, "wb+");
@@ -667,7 +667,7 @@ int Recordings_Capture(cJSON* profile) {
 	}
 
     // Open or create index file
-    sprintf(filepath, "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.idx", profileId);
+    sprintf(filepath, "/var/spool/storage/NetworkShare/timelapse2/%s/timelapse.idx", profileId);
     FILE* indexFile = fopen(filepath, "rb+");
     if (!indexFile) {
         indexFile = fopen(filepath, "wb+");
@@ -739,9 +739,9 @@ int Recordings_Archive(const char *profileID) {
     
     // Setup paths
     snprintf(profilePath, sizeof(profilePath), 
-             "/var/spool/storage/SD_DISK/timelapse2/%s", profileID);
+             "/var/spool/storage/NetworkShare/timelapse2/%s", profileID);
     snprintf(archivePath, sizeof(archivePath), 
-             "/var/spool/storage/SD_DISK/timelapse2/archive");
+             "/var/spool/storage/NetworkShare/timelapse2/archive");
     snprintf(aviFile, sizeof(aviFile), "%s/timelapse.avi", profilePath);
     snprintf(idxFile, sizeof(idxFile), "%s/timelapse.idx", profilePath);
     
@@ -899,7 +899,7 @@ int Recordings_Delete_Archive(const char* filename) {
             found = 1;
             char filepath[PATH_MAX_LEN];
             snprintf(filepath, sizeof(filepath), 
-                    "/var/spool/storage/SD_DISK/timelapse2/archive/%s", filename);
+                    "/var/spool/storage/NetworkShare/timelapse2/archive/%s", filename);
             unlink(filepath);
         } else {
             cJSON_AddItemToArray(newArchiveList, cJSON_Duplicate(item, 1));
@@ -944,7 +944,7 @@ HTTP_Endpoint_Image(const ACAP_HTTP_Response response,
     
     // Read frame index
     char idxfile[PATH_MAX_LEN];
-    sprintf(idxfile, "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.idx", profileId);
+    sprintf(idxfile, "/var/spool/storage/NetworkShare/timelapse2/%s/timelapse.idx", profileId);
     
     FILE* idxf = fopen(idxfile, "rb");
     if (!idxf) {
@@ -977,7 +977,7 @@ HTTP_Endpoint_Image(const ACAP_HTTP_Response response,
 
     // Read frame from AVI
     char avifile[PATH_MAX_LEN];
-    sprintf(avifile, "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.avi", profileId);
+    sprintf(avifile, "/var/spool/storage/NetworkShare/timelapse2/%s/timelapse.avi", profileId);
     
     FILE* avif = fopen(avifile, "rb");
     if (!avif) {
@@ -1045,9 +1045,9 @@ static void HTTP_Endpoint_Export(const ACAP_HTTP_Response response,
 
     char avipath[PATH_MAX_LEN], idxpath[PATH_MAX_LEN];
     snprintf(avipath, sizeof(avipath), 
-             "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.avi", profileId);
+             "/var/spool/storage/NetworkShare/timelapse2/%s/timelapse.avi", profileId);
     snprintf(idxpath, sizeof(idxpath), 
-             "/var/spool/storage/SD_DISK/timelapse2/%s/timelapse.idx", profileId);
+             "/var/spool/storage/NetworkShare/timelapse2/%s/timelapse.idx", profileId);
 
 	FILE* aviFile = fopen(avipath, "rb+");
     FILE* idxFile = fopen(idxpath, "rb");
@@ -1233,7 +1233,7 @@ static void HTTP_Endpoint_Download(const ACAP_HTTP_Response response,
 
     char filepath[PATH_MAX_LEN];
     snprintf(filepath, sizeof(filepath), 
-             "/var/spool/storage/SD_DISK/timelapse2/archive/%s", filename);
+             "/var/spool/storage/NetworkShare/timelapse2/archive/%s", filename);
 
     FILE* file = fopen(filepath, "rb");
     if (!file) {
